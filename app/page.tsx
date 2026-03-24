@@ -1,13 +1,22 @@
 "use client"
-
+import { supabase } from "@/lib/supabase"
 import { XIcon } from "lucide-react"
 import { useState } from "react"
+import { useEffect } from "react"
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [goalName, setGoalName] = useState("")
   const [deadline, setDeadline] = useState("")
   const [goals, setGoals] = useState<{ name: string; deadline: string }[]>([])
+
+  useEffect(() => {
+    async function loadGoals() {
+      const { data } = await supabase.from("goals").select()
+      if (data) setGoals(data)
+    }
+    loadGoals()
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-gray-950 text-white">
@@ -37,12 +46,16 @@ export default function Home() {
       value={goalName}
        onChange={(e) => setGoalName(e.target.value)}
        placeholder = "Enter your goal" />
+
       <input type = "date"
       value={deadline}
       onChange={(e) => setDeadline(e.target.value)}
       placeholder = "Enter the deadline" />
-      <button onClick={() => {
-        setGoals([...goals, { name: goalName, deadline: deadline }])
+
+      <button onClick={async() => {
+        await supabase.from("goals").insert({ name: goalName, deadline: deadline })
+        const { data } = await supabase.from("goals").select()
+        if (data) setGoals(data)
         setIsOpen(false)
         setGoalName("")
         setDeadline("")
