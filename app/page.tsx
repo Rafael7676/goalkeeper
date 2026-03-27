@@ -8,6 +8,7 @@ export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [goalName, setGoalName] = useState("")
   const [deadline, setDeadline] = useState("")
+  const [tasks, setTasks] = useState<{ title: string; scheduled_date: string; duration_minutes: number }[]>([])
   const [goals, setGoals] = useState<{ name: string; deadline: string }[]>([])
 
   useEffect(() => {
@@ -53,13 +54,28 @@ export default function Home() {
       placeholder = "Enter the deadline" />
 
       <button onClick={async() => {
-        await supabase.from("goals").insert({ name: goalName, deadline: deadline })
-        const { data } = await supabase.from("goals").select()
-        if (data) setGoals(data)
-        setIsOpen(false)
-        setGoalName("")
-        setDeadline("")
-      }}>
+  // 1. Save goal to Supabase
+  await supabase
+    .from("goals")
+    .insert({ name: goalName, deadline: deadline })
+
+  // 2. Send goal to Claude API
+  const response = await fetch("/api/breakdown", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goalName, deadline })
+  })
+
+  const { tasks } = await response.json()
+  setTasks(tasks)
+
+  // 3. Reload goals and close
+  const { data } = await supabase.from("goals").select()
+  if (data) setGoals(data)
+  setIsOpen(false)
+  setGoalName("")
+  setDeadline("")
+}}>
         Add Goal
       </button>
     </div>
@@ -68,8 +84,14 @@ export default function Home() {
 
       {/* Main area */}
       <div className="flex-1 p-6">
-        <h2>My Schedule</h2>
-      </div>
+  <h2 className="text-lg font-semibold mb-4">My Schedule</h2>
+  {tasks.map((task, index) => (
+    <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3">
+      <p className="font-medium">{task.title}</p>
+      <p className="text-gray-400 text-sm">{task.scheduled_date} · {task.duration_minutes} mins</p>
+    </div>
+  ))}
+</div>
 
     </div>
   )
