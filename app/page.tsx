@@ -40,7 +40,11 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-white">
+    <div className="flex min-h-screen bg-gray-950 text-white pt-14">
+
+<div className="fixed top-0 left-0 right-0 h-14 bg-gray-900 border-b border-gray-800 flex items-center px-6 z-10">
+  <h1 className="text-lg font-bold">Goalkeeper</h1>
+</div>
 
       {/* Sidebar */}
       <div className="w-80 bg-gray-900 p-6 flex flex-col">
@@ -49,7 +53,7 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto mb-4">
           {goals.map((goal, index) => (
             <div key={index} onClick={() => setSelectedGoalId(goal.id)}
-              className="bg-gray-800 rounded-lg p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-700">
+              className={`bg-gray-800 rounded-lg p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-700 ${selectedGoalId === goal.id ? "border border-blue-500" : ""}`}>
               {goal.name}
               <button onClick={() => deleteGoal(goal.id)} className="text-gray-500 hover:text-red-400">
                 ✕
@@ -106,7 +110,7 @@ export default function Home() {
               setTasks(tasks)
 
               // 3. Save tasks to Supabase
-              const { error} = await supabase.from("tasks").insert(
+              const { error } = await supabase.from("tasks").insert(
                 tasks.map((task: { title: string; scheduled_date: string; duration_minutes: number }) => ({
                   goal_id: goalData.id,
                   title: task.title,
@@ -136,12 +140,16 @@ export default function Home() {
       {/* Main area */}
       <div className="flex-1 p-6">
         <h2 className="text-lg font-semibold mb-4">My Schedule</h2>
-        {tasks.map((task, index) => (
-          <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3">
-            <p className="font-medium">{task.title}</p>
-            <p className="text-gray-400 text-sm">{task.scheduled_date} · {task.duration_minutes} mins</p>
-          </div>
-        ))}
+        {tasks.length === 0 ? (
+          <p className="text-gray-500">Select a goal to see your plan</p>
+        ) : (
+          tasks.map((task, index) => (
+            <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3">
+              <p className="font-medium">{task.title}</p>
+              <p className="text-gray-400 text-sm">{task.scheduled_date} · {task.duration_minutes} mins</p>
+            </div>
+          ))
+        )}
       </div>
 
     </div>
