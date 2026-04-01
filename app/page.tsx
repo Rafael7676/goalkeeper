@@ -7,10 +7,11 @@ import { useEffect } from "react"
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
   const [goalName, setGoalName] = useState("")
-  const [deadline, setDeadline] = useState("")
+  const [deadline, setDeadline] = useState("1 week")
   const [isLoading, setIsLoading] = useState(false)
   const [tasks, setTasks] = useState<{ title: string; scheduled_date: string; duration_minutes: number }[]>([])
-  const [goals, setGoals] = useState<{ name: string; deadline: string }[]>([])
+  const [goals, setGoals] = useState<{ id: number; name: string; deadline: string }[]>([])
+  const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null)
 
   useEffect(() => {
     async function loadGoals() {
@@ -19,6 +20,24 @@ export default function Home() {
     }
     loadGoals()
   }, [])
+
+  useEffect(() => {
+    if (!selectedGoalId) return
+    async function loadTasks() {
+      const { data } = await supabase
+        .from("tasks")
+        .select()
+        .eq("goal_id", selectedGoalId)
+      if (data) setTasks(data)
+    }
+    loadTasks()
+  }, [selectedGoalId])
+
+  async function deleteGoal(id: number) {
+    await supabase.from("goals").delete().eq("id", id)
+    const { data } = await supabase.from("goals").select()
+    if (data) setGoals(data)
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-950 text-white">
@@ -29,8 +48,12 @@ export default function Home() {
 
         <div className="flex-1 overflow-y-auto mb-4">
           {goals.map((goal, index) => (
-            <div key={index} className="bg-gray-800 rounded-lg p-3 mb-2">
+            <div key={index} onClick={() => setSelectedGoalId(goal.id)}
+              className="bg-gray-800 rounded-lg p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-700">
               {goal.name}
+              <button onClick={() => deleteGoal(goal.id)} className="text-gray-500 hover:text-red-400">
+                ✕
+              </button>
             </div>
           ))}
         </div>
@@ -66,9 +89,11 @@ export default function Home() {
             <button onClick={async () => {
               setIsLoading(true)
               // 1. Save goal to Supabase
-              await supabase
+              const { data: goalData } = await supabase
                 .from("goals")
                 .insert({ name: goalName, deadline: deadline })
+                .select()
+                .single()
 
               // 2. Send goal to Claude API
               const response = await fetch("/api/breakdown", {
@@ -80,7 +105,21 @@ export default function Home() {
               const { tasks } = await response.json()
               setTasks(tasks)
 
-              // 3. Reload goals and close
+              // 3. Save tasks to Supabase
+              const { error} = await supabase.from("tasks").insert(
+                tasks.map((task: { title: string; scheduled_date: string; duration_minutes: number }) => ({
+                  goal_id: goalData.id,
+                  title: task.title,
+                  scheduled_date: task.scheduled_date,
+                  duration_minutes: task.duration_minutes
+                }))
+              )
+
+              console.log("insert error:", error)
+              console.log("goalData:", goalData)
+              console.log("tasks to insert:", tasks)
+
+              // 4. Reload goals and close
               const { data } = await supabase.from("goals").select()
               if (data) setGoals(data)
               setIsOpen(false)
