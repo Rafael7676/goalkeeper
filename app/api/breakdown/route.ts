@@ -6,7 +6,7 @@ const anthropic = new Anthropic({
 })
 
 export async function POST(request: Request) {
-  const { goalName, deadline } = await request.json()
+  const { goalName, deadline, hoursPerDay, constraints } = await request.json()
   const today = new Date().toISOString().split('T')[0]
 
 
@@ -18,13 +18,19 @@ export async function POST(request: Request) {
       {
         role: "user",
         content: `Today's date is ${today}. Create a plan for this goal: "${goalName}" with deadline: "${deadline}".
+        The user has ${hoursPerDay} hours per day available.
+        Constraints: ${constraints || "none"}.
         Return ONLY a JSON array of tasks, no other text. Each task should have:
         - title (string)
         - scheduled_date (YYYY-MM-DD format)
+        - start_time (HH:MM, 24h format)
+        - end_time (HH:MM, 24h format)
         - duration_minutes (number)
         
+        
         Example format:
-        [{"title": "Task 1", "scheduled_date": "2026-04-01", "duration_minutes": 30}]`
+        [{"title": "Task 1", "scheduled_date": "2026-04-01","start_time": "13:00",
+        "end_time": "14:30", "duration_minutes": 90}]`
       }
     ]
   })

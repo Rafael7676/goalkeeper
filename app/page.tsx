@@ -9,9 +9,13 @@ export default function Home() {
   const [goalName, setGoalName] = useState("")
   const [deadline, setDeadline] = useState("1 week")
   const [isLoading, setIsLoading] = useState(false)
-  const [tasks, setTasks] = useState<{ title: string; scheduled_date: string; duration_minutes: number }[]>([])
+  const [tasks, setTasks] = useState<
+    { title: string; scheduled_date: string; start_time: string; end_time: string; duration_minutes: number }[]
+  >([])
   const [goals, setGoals] = useState<{ id: number; name: string; deadline: string }[]>([])
   const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null)
+  const [hoursPerDay, setHoursPerDay] = useState("")
+  const [constraints, setConstraints] = useState("")
 
   useEffect(() => {
     async function loadGoals() {
@@ -42,9 +46,9 @@ export default function Home() {
   return (
     <div className="flex min-h-screen bg-gray-950 text-white pt-14">
 
-<div className="fixed top-0 left-0 right-0 h-14 bg-gray-900 border-b border-gray-800 flex items-center px-6 z-10">
-  <h1 className="text-lg font-bold">Goalkeeper</h1>
-</div>
+      <div className="fixed top-0 left-0 right-0 h-14 bg-gray-900 border-b border-gray-800 flex items-center px-6 z-10">
+        <h1 className="text-lg font-bold">Goalkeeper</h1>
+      </div>
 
       {/* Sidebar */}
       <div className="w-80 bg-gray-900 p-6 flex flex-col">
@@ -73,7 +77,7 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-gray-900 rounded-2xl p-8 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Add a Goal</h2>
-            <button onClick={() => setIsOpen(false)} className="absolute top-4 right-5 text-white hover:text-gray-400">
+            <button onClick={() => setIsOpen(false)} className="absolute top-17 right-5 text-white hover:text-gray-400">
               ✕
             </button>
             <input type="text"
@@ -82,13 +86,29 @@ export default function Home() {
               onChange={(e) => setGoalName(e.target.value)}
               placeholder="Enter your goal" />
 
-            <select value={deadline} onChange={(e) => setDeadline(e.target.value)}>
+            <select value={deadline}
+            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+            onChange={(e) => setDeadline(e.target.value)}>
               <option value="1 week">1 week</option>
               <option value="2 weeks">2 weeks</option>
               <option value="1 month">1 month</option>
               <option value="3 month">3 month</option>
               <option value="6 month">6 month</option>
             </select>
+
+            <input type="number"
+            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+            value={hoursPerDay}
+            onChange ={(e) => setHoursPerDay(e.target.value)}
+            placeholder="Enter the amount of hours you want to work per day"
+            />
+
+            <input type="text"
+            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+            value={constraints}
+            onChange ={(e) => setConstraints(e.target.value)}
+            placeholder="Enter any constraints you have"
+            />
 
             <button onClick={async () => {
               setIsLoading(true)
@@ -103,7 +123,7 @@ export default function Home() {
               const response = await fetch("/api/breakdown", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ goalName, deadline })
+                body: JSON.stringify({ goalName, deadline, hoursPerDay, constraints })
               })
 
               const { tasks } = await response.json()
@@ -111,12 +131,22 @@ export default function Home() {
 
               // 3. Save tasks to Supabase
               const { error } = await supabase.from("tasks").insert(
-                tasks.map((task: { title: string; scheduled_date: string; duration_minutes: number }) => ({
-                  goal_id: goalData.id,
-                  title: task.title,
-                  scheduled_date: task.scheduled_date,
-                  duration_minutes: task.duration_minutes
-                }))
+                tasks.map(
+                  (task: {
+                    title: string
+                    scheduled_date: string
+                    start_time: string
+                    end_time: string
+                    duration_minutes: number
+                  }) => ({
+                    goal_id: goalData.id,
+                    title: task.title,
+                    scheduled_date: task.scheduled_date,
+                    start_time: task.start_time,
+                    end_time: task.end_time,
+                    duration_minutes: task.duration_minutes,
+                  })
+                )
               )
 
               console.log("insert error:", error)
@@ -126,6 +156,7 @@ export default function Home() {
               // 4. Reload goals and close
               const { data } = await supabase.from("goals").select()
               if (data) setGoals(data)
+              setSelectedGoalId(goalData.id)
               setIsOpen(false)
               setIsLoading(false)
               setGoalName("")
@@ -146,7 +177,9 @@ export default function Home() {
           tasks.map((task, index) => (
             <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3">
               <p className="font-medium">{task.title}</p>
-              <p className="text-gray-400 text-sm">{task.scheduled_date} · {task.duration_minutes} mins</p>
+              <p className="text-gray-400 text-sm">
+                {task.scheduled_date} · {task.start_time}–{task.end_time} · {task.duration_minutes} mins
+              </p>
             </div>
           ))
         )}
