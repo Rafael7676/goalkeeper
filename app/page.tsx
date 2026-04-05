@@ -10,7 +10,7 @@ export default function Home() {
   const [deadline, setDeadline] = useState("1 week")
   const [isLoading, setIsLoading] = useState(false)
   const [tasks, setTasks] = useState<
-    { title: string; scheduled_date: string; start_time: string; end_time: string; duration_minutes: number }[]
+    { id: number; goal_id: number; title: string; scheduled_date: string; start_time: string; end_time: string; duration_minutes: number; completed: boolean }[]
   >([])
   const [goals, setGoals] = useState<{ id: number; name: string; deadline: string }[]>([])
   const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null)
@@ -24,6 +24,7 @@ export default function Home() {
     }
     loadGoals()
   }, [])
+  
 
   useEffect(() => {
     if (!selectedGoalId) return
@@ -41,6 +42,12 @@ export default function Home() {
     await supabase.from("goals").delete().eq("id", id)
     const { data } = await supabase.from("goals").select()
     if (data) setGoals(data)
+  }
+
+  async function completeTask(task: { id: number, completed: boolean }) {
+    await supabase.from("tasks").update({completed: !task.completed }).eq("id", task.id)
+    const { data } = await supabase.from("tasks").select().eq("goal_id", selectedGoalId)
+    if (data) setTasks(data)
   }
 
   return (
@@ -149,10 +156,6 @@ export default function Home() {
                 )
               )
 
-              console.log("insert error:", error)
-              console.log("goalData:", goalData)
-              console.log("tasks to insert:", tasks)
-
               // 4. Reload goals and close
               const { data } = await supabase.from("goals").select()
               if (data) setGoals(data)
@@ -180,6 +183,14 @@ export default function Home() {
               <p className="text-gray-400 text-sm">
                 {task.scheduled_date} · {task.start_time}–{task.end_time} · {task.duration_minutes} mins
               </p>
+
+              {/* Checkbox to complete the task */}
+              <input
+               type="checkbox" 
+               checked={task.completed}
+               onChange={() => completeTask(task)}
+               className="mr-3 cursor-pointer"
+               />
             </div>
           ))
         )}
