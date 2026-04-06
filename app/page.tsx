@@ -24,7 +24,7 @@ export default function Home() {
     }
     loadGoals()
   }, [])
-  
+
 
   useEffect(() => {
     if (!selectedGoalId) return
@@ -44,8 +44,14 @@ export default function Home() {
     if (data) setGoals(data)
   }
 
+  async function deleteTask(id: number) {
+    await supabase.from("tasks").delete().eq("id", id)
+    const { data } = await supabase.from("tasks").select().eq("goal_id", selectedGoalId)
+    if (data) setTasks(data)
+  }
+
   async function completeTask(task: { id: number, completed: boolean }) {
-    await supabase.from("tasks").update({completed: !task.completed }).eq("id", task.id)
+    await supabase.from("tasks").update({ completed: !task.completed }).eq("id", task.id)
     const { data } = await supabase.from("tasks").select().eq("goal_id", selectedGoalId)
     if (data) setTasks(data)
   }
@@ -94,8 +100,8 @@ export default function Home() {
               placeholder="Enter your goal" />
 
             <select value={deadline}
-            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
-            onChange={(e) => setDeadline(e.target.value)}>
+              className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+              onChange={(e) => setDeadline(e.target.value)}>
               <option value="1 week">1 week</option>
               <option value="2 weeks">2 weeks</option>
               <option value="1 month">1 month</option>
@@ -104,17 +110,17 @@ export default function Home() {
             </select>
 
             <input type="number"
-            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
-            value={hoursPerDay}
-            onChange ={(e) => setHoursPerDay(e.target.value)}
-            placeholder="Enter the amount of hours you want to work per day"
+              className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+              value={hoursPerDay}
+              onChange={(e) => setHoursPerDay(e.target.value)}
+              placeholder="Enter the amount of hours you want to work per day"
             />
 
             <input type="text"
-            className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
-            value={constraints}
-            onChange ={(e) => setConstraints(e.target.value)}
-            placeholder="Enter any constraints you have"
+              className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4"
+              value={constraints}
+              onChange={(e) => setConstraints(e.target.value)}
+              placeholder="Enter any constraints you have"
             />
 
             <button onClick={async () => {
@@ -178,19 +184,31 @@ export default function Home() {
           <p className="text-gray-500">Select a goal to see your plan</p>
         ) : (
           tasks.map((task, index) => (
-            <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3">
+            <div key={index} className="bg-gray-900 rounded-xl p-4 mb-3 flex justify-between items-center">
+
+              {/* Left - title */}
               <p className="font-medium">{task.title}</p>
-              <p className="text-gray-400 text-sm">
+
+             <div className="flex items-center gap-4">
+              <p className="text-gray-400 text-sm w-64">
                 {task.scheduled_date} · {task.start_time}–{task.end_time} · {task.duration_minutes} mins
               </p>
 
+              {/* Delete button */}
+              <button onClick={() => deleteTask(task.id)}
+                className="text-gray-500 hover:text-red-400">
+                ✕
+              </button>
+
               {/* Checkbox to complete the task */}
               <input
-               type="checkbox" 
-               checked={task.completed}
-               onChange={() => completeTask(task)}
-               className="mr-3 cursor-pointer"
-               />
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => completeTask(task)}
+                className="mr-3 cursor-pointer"
+              />
+              </div>
+              
             </div>
           ))
         )}
