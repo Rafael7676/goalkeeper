@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase"
 import { XIcon } from "lucide-react"
 import { useState } from "react"
 import { useEffect } from "react"
+import Link from "next/link"
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
@@ -79,9 +80,13 @@ export default function Home() {
           ))}
         </div>
 
-        <button onClick={() => setIsOpen(true)} className="w-full bg-blue-500 text-white p-3 rounded-lg">
+        <button onClick={() => setIsOpen(true)} className="w-full bg-blue-500 text-white text-center mb-4 p-3 rounded-lg">
           Add Goal
         </button>
+
+        <Link href="/settings" className="w-full bg-gray-700 text-white p-3 rounded-lg text-center block">
+          Settings
+        </Link>
       </div>
 
 
@@ -189,26 +194,26 @@ export default function Home() {
               {/* Left - title */}
               <p className="font-medium">{task.title}</p>
 
-             <div className="flex items-center gap-4">
-              <p className="text-gray-400 text-sm w-64">
-                {task.scheduled_date} · {task.start_time}–{task.end_time} · {task.duration_minutes} mins
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-gray-400 text-sm w-64">
+                  {task.scheduled_date} · {task.start_time}–{task.end_time} · {task.duration_minutes} mins
+                </p>
 
-              {/* Delete button */}
-              <button onClick={() => deleteTask(task.id)}
-                className="text-gray-500 hover:text-red-400">
-                ✕
-              </button>
+                {/* Delete button */}
+                <button onClick={() => deleteTask(task.id)}
+                  className="text-gray-500 hover:text-red-400">
+                  ✕
+                </button>
 
-              {/* Checkbox to complete the task */}
-              <input
-                type="checkbox"
-                checked={task.completed ?? false}
-                onChange={() => completeTask(task)}
-                className="mr-3 cursor-pointer"
-              />
+                {/* Checkbox to complete the task */}
+                <input
+                  type="checkbox"
+                  checked={task.completed ?? false}
+                  onChange={() => completeTask(task)}
+                  className="mr-3 cursor-pointer"
+                />
               </div>
-              
+
             </div>
           ))
         )}
