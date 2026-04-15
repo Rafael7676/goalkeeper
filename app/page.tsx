@@ -203,7 +203,7 @@ export default function Home() {
               {/* Checkbox to complete the task */}
               <input
                 type="checkbox"
-                checked={task.completed}
+                checked={task.completed ?? false}
                 onChange={() => completeTask(task)}
                 className="mr-3 cursor-pointer"
               />
