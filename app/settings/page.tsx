@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { useEffect } from "react"
 
 export default function SettingsPage() {
     const [newDay, setNewDay] = useState("")
@@ -16,6 +17,26 @@ export default function SettingsPage() {
         end: string
         label: string
     }[]>([])
+
+    useEffect(() => {
+        async function loadSettings() {
+            const { data } = await supabase.from("user_settings").select().eq("id", 1).single()
+            if (data) {
+                setCommitments(data.fixed_commitments);
+                setWakeUpTime(data.wake_time);
+                setBedTime(data.sleep_time);
+                setHoursPerDay(data.max_work_hours)
+            }
+        }
+        loadSettings()
+    }, [])
+
+
+
+
+
+
+
 
     function addCommitment() {
         const newCommitment = {
@@ -130,7 +151,7 @@ export default function SettingsPage() {
             </section>
 
             <button className="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-semibold"
-            onClick={saveSettings}>
+                onClick={saveSettings}>
                 Save Settings
             </button>
         </div >
